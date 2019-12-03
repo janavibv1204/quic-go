@@ -76,11 +76,11 @@ func DialAddrContext(
 	udpAddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {
 		return nil, err
-	}
+	} else { fmt.Printf("Client resolving server address success....\n")}
 	udpConn, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4zero, Port: 0})
 	if err != nil {
 		return nil, err
-	}
+	} else { fmt.Printf("Client ListenUDP()....\n ") }
 	return dialContext(ctx, udpConn, udpAddr, addr, tlsConf, config, true)
 }
 
@@ -128,15 +128,15 @@ func dialContext(
 	packetHandlers, err := getMultiplexer().AddConn(pconn, config.ConnectionIDLength, config.StatelessResetKey)
 	if err != nil {
 		return nil, err
-	}
+	} else { fmt.Printf("getMultiplexer().AddConn....\n") }
 	c, err := newClient(pconn, remoteAddr, config, tlsConf, host, createdPacketConn)
 	if err != nil {
 		return nil, err
-	}
+	} else {fmt.Printf("newClient()....\n")}
 	c.packetHandlers = packetHandlers
 	if err := c.dial(ctx); err != nil {
 		return nil, err
-	}
+	} else {fmt.Printf("packetHandlers.... \n")}
 	return c.session, nil
 }
 
@@ -256,10 +256,13 @@ func populateClientConfig(config *Config, createdPacketConn bool) *Config {
 	}
 }
 
-func (c *client) dial(ctx context.Context) error {
+func (c *client) dial(ctx context.Context) error { fmt.Printf ("dial(ctx).... \n")
 	c.logger.Infof("Starting new connection to %s (%s -> %s), source connection ID %s, destination connection ID %s, version %s", c.tlsConf.ServerName, c.conn.LocalAddr(), c.conn.RemoteAddr(), c.srcConnID, c.destConnID, c.version)
+	fmt.Printf ("Starting new connection to %s (%s -> %s), source connection ID %s, destination connection ID %s, version %s\n", c.tlsConf.ServerName, c.conn.LocalAddr(), c.conn.RemoteAddr(), c.srcConnID, c.destConnID, c.version)
 	c.createNewTLSSession(c.version)
+	fmt.Printf ("createNewTLSSession().....\n")
 	err := c.establishSecureConnection(ctx)
+	fmt.Printf ("Establishing secure connection.....\n")
 	if err == errCloseForRecreating {
 		return c.dial(ctx)
 	}
@@ -274,14 +277,16 @@ func (c *client) dial(ctx context.Context) error {
 func (c *client) establishSecureConnection(ctx context.Context) error {
 	errorChan := make(chan error, 1)
 
-	go func() {
+	go func() { fmt.Printf("About to run session...\n")
 		err := c.session.run() // returns as soon as the session is closed
+		fmt.Printf("session running.... \n")
 		if err != errCloseForRecreating && c.createdPacketConn {
 			c.packetHandlers.Close()
+			fmt.Printf("packetHandlers closing.... \n")
 		}
 		errorChan <- err
 	}()
-
+		fmt.Printf("go func() exiting.... \n")
 	select {
 	case <-ctx.Done():
 		// The session will send a PeerGoingAway error to the server.
@@ -368,9 +373,11 @@ func (c *client) createNewTLSSession(_ protocol.VersionNumber) {
 		c.version,
 	)
 	c.mutex.Unlock()
+	fmt.Printf("newClientSession mutex unlocked.... \n")
 	// It's not possible to use the stateless reset token for the client's (first) connection ID,
 	// since there's no way to securely communicate it to the server.
-	c.packetHandlers.Add(c.srcConnID, c)
+	c.packetHandlers.Add(c.srcConnID, c) 
+	fmt.Printf("packetHandlers.Add().....\n")
 }
 
 func (c *client) Close() error {
@@ -401,3 +408,4 @@ func (c *client) GetVersion() protocol.VersionNumber {
 func (c *client) getPerspective() protocol.Perspective {
 	return protocol.PerspectiveClient
 }
+
