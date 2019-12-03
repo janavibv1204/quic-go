@@ -31,7 +31,8 @@ Running tests:
 
 ### QUIC without HTTP/3
 
-Take a look at [this echo example](example/echo/echo.go).
+- Sample client-server chat application
+- Load static certificate and RSA key file generated in Ubuntu
 
 ## Usage
 
